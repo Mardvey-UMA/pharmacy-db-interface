@@ -9,11 +9,10 @@ import {
 } from 'lucide-react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import Employees from '../pages/Employees'
+import Medications from '../pages/Medications'
 import Orders from '../pages/Orders'
 import Pharmacies from '../pages/Pharmacies'
 import Sales from '../pages/Sales'
-// import Medications from '../pages/Medications'
-// import Reports from '../pages/Reports'
 
 const { Header, Sider, Content } = AntLayout
 
@@ -88,6 +87,7 @@ function Layout() {
 						<Route path='/pharmacies' element={<Pharmacies />} />
 						<Route path='/sales' element={<Sales />} />
 						<Route path='/orders' element={<Orders />} />
+						<Route path='/medications' element={<Medications />} />
 						<Route path='/' element={<Employees />} />
 					</Routes>
 				</Content>

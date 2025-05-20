@@ -50,18 +50,24 @@ public class OrderService {
 
         List<ClientOrder> orders = orderRepo.findAll(spec);
 
-        return orders.stream().map(order -> {
-            BigDecimal total = calculateTotal(order);
-            return new OrderDto(
-                    order.getId(),
-                    order.getOrderAddress(),
-                    order.getOrderDate(),
-                    order.getStatus(),
-                    order.getClient().getId(),
-                    order.getClient().getFullName(),
-                    total
-            );
-        }).toList();
+        return orders.stream()
+                .map(order -> {
+                    BigDecimal total = calculateTotal(order);
+                    return new OrderDto(
+                            order.getId(),
+                            order.getOrderAddress(),
+                            order.getOrderDate(),
+                            order.getStatus(),
+                            order.getClient().getId(),
+                            order.getClient().getFullName(),
+                            total
+                    );
+                })
+                .filter(orderDto ->
+                        (filter.minSum() == null || orderDto.total().compareTo(filter.minSum()) >= 0) &&
+                                (filter.maxSum() == null || orderDto.total().compareTo(filter.maxSum()) <= 0)
+                )
+                .toList();
     }
 
     public OrderDetailsDto getOrderDetails(Long id) {
@@ -110,7 +116,7 @@ public class OrderService {
         order.setClient(client);
         order.setOrderAddress(dto.orderAddress());
         order.setOrderDate(LocalDate.now());
-        order.setStatus("Новый");
+        order.setStatus("обработка");
 
         // Привязка сборщиков и курьеров
         Set<Employee> assemblers = new HashSet<>();
