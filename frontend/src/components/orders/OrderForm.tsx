@@ -140,7 +140,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 			dataIndex: 'price',
 			key: 'price',
 			width: '15%',
-			render: (price: number) => `$${price.toFixed(2)}`,
+			render: (price: number) => `${price.toLocaleString('ru-RU')} ₽`,
 		},
 		{
 			title: 'В наличии',
@@ -280,88 +280,62 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 							validator: async (_, medications) => {
 								if (!medications || medications.length === 0) {
 									return Promise.reject(
-										new Error('Добавьте хотя бы одно лекарство')
-									)
-								}
-								if (
-									medications.some(
-										(med: any) => !med.medicationId || !med.quantity
-									)
-								) {
-									return Promise.reject(
-										new Error('Заполните все поля лекарств')
+										new Error('Пожалуйста, выберите хотя бы одно лекарство')
 									)
 								}
 							},
 						},
 					]}
 				>
-					{(fields, { remove }) => (
+					{(fields, { add, remove }) => (
 						<>
-							{fields.map(({ key, name, ...restField }) => {
-								const medicationId = form.getFieldValue([
-									'medications',
-									name,
-									'medicationId',
-								])
-								const medication = medications?.find(m => m.id === medicationId)
-
-								return (
-									<Space
-										key={key}
-										style={{ display: 'flex', marginBottom: 8 }}
-										align='baseline'
+							{fields.map(({ key, name, ...restField }) => (
+								<Space
+									key={key}
+									style={{ display: 'flex', marginBottom: 8 }}
+									align='baseline'
+								>
+									<Form.Item
+										{...restField}
+										name={[name, 'medicationId']}
+										rules={[
+											{
+												required: true,
+												message: 'Пожалуйста, выберите лекарство',
+											},
+										]}
 									>
-										<Form.Item
-											{...restField}
-											name={[name, 'medicationId']}
-											rules={[
-												{ required: true, message: 'Выберите лекарство' },
-											]}
-											hidden
+										<Select
+											style={{ width: 300 }}
+											placeholder='Выберите лекарство'
 										>
-											<Input />
-										</Form.Item>
-										<Form.Item
-											label={
-												medication
-													? `${medication.name} - $${medication.price.toFixed(
-															2
-													  )}`
-													: 'Выберите лекарство'
-											}
-											{...restField}
-											name={[name, 'quantity']}
-											rules={[
-												{ required: true, message: 'Укажите количество' },
-												({ getFieldValue }) => ({
-													validator(_, value) {
-														const medicationId = getFieldValue([
-															'medications',
-															name,
-															'medicationId',
-														])
-														const medication = medications?.find(
-															m => m.id === medicationId
-														)
-														if (!medication || value <= medication.quantity) {
-															return Promise.resolve()
-														}
-														return Promise.reject(
-															new Error(
-																`Максимальное доступное количество: ${medication.quantity}`
-															)
-														)
-													},
-												}),
-											]}
-										>
-											<InputNumber min={1} placeholder='Количество' />
-										</Form.Item>
-										<MinusCircleOutlined onClick={() => remove(name)} />
-									</Space>
-								)
-							})}
+											{medications?.map(medication => (
+												<Select.Option
+													key={medication.id}
+													value={medication.id}
+												>
+													{medication.name}
+												</Select.Option>
+											))}
+										</Select>
+									</Form.Item>
+
+									<Form.Item
+										{...restField}
+										name={[name, 'quantity']}
+										rules={[
+											{
+												required: true,
+												message: 'Пожалуйста, введите количество',
+											},
+										]}
+									>
+										<InputNumber min={1} placeholder='Количество' />
+									</Form.Item>
+
+									<MinusCircleOutlined onClick={() => remove(name)} />
+								</Space>
+							))}
 						</>
 					)}
 				</Form.List>

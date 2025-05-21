@@ -187,7 +187,7 @@ const Medications: React.FC = () => {
 				title: 'Цена',
 				dataIndex: 'price',
 				key: 'price',
-				render: (price: number) => `$${price.toFixed(2)}`,
+				render: (price: number) => `${price.toLocaleString('ru-RU')} ₽`,
 				sorter: (a: MedicationInPharmacy, b: MedicationInPharmacy) =>
 					a.price - b.price,
 			},

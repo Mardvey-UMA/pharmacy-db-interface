@@ -1,0 +1,59 @@
+:root {
+	--font-family-base: 'JetBrains Mono', -apple-system, BlinkMacSystemFont,
+		'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
+		'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Применяем шрифт ко всем элементам */
+* {
+	font-family: var(--font-family-base);
+}
+
+/* Специальные настройки для разных элементов */
+body {
+	font-family: var(--font-family-base);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Настройки для кода */
+code,
+pre {
+	font-family: 'JetBrains Mono', monospace;
+}
+
+/* Настройки для заголовков */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-family-base);
+	font-weight: 600;
+}
+
+/* Настройки для таблиц */
+.ant-table {
+	font-family: var(--font-family-base);
+}
+
+/* Настройки для форм */
+.ant-form-item-label > label {
+	font-family: var(--font-family-base);
+}
+
+/* Настройки для кнопок */
+.ant-btn {
+	font-family: var(--font-family-base);
+}
+
+/* Настройки для селектов */
+.ant-select {
+	font-family: var(--font-family-base);
+}
+
+/* Настройки для инпутов */
+.ant-input {
+	font-family: var(--font-family-base);
+}

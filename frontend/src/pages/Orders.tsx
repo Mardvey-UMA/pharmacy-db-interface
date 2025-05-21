@@ -59,7 +59,7 @@ const Orders: React.FC = () => {
 			title: 'Дата',
 			dataIndex: 'orderDate',
 			key: 'orderDate',
-			render: (date: string) => format(new Date(date), 'MMM dd, yyyy'),
+			render: (date: string) => format(new Date(date), 'dd.MM.yyyy'),
 			sorter: (a: Order, b: Order) =>
 				new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime(),
 		},
@@ -97,7 +97,7 @@ const Orders: React.FC = () => {
 			title: 'Сумма',
 			dataIndex: 'total',
 			key: 'total',
-			render: (total: number) => `$${total.toFixed(2)}`,
+			render: (total: number) => `${total.toLocaleString('ru-RU')} ₽`,
 			sorter: (a: Order, b: Order) => a.total - b.total,
 		},
 		{

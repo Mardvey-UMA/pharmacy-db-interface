@@ -12,6 +12,7 @@ import Employees from '../pages/Employees'
 import Medications from '../pages/Medications'
 import Orders from '../pages/Orders'
 import Pharmacies from '../pages/Pharmacies'
+import Reports from '../pages/Reports'
 import Sales from '../pages/Sales'
 
 const { Header, Sider, Content } = AntLayout
@@ -20,32 +21,32 @@ const menuItems = [
 	{
 		key: '/employees',
 		icon: <Users size={18} />,
-		label: <Link to='/employees'>Employees</Link>,
+		label: <Link to='/employees'>Сотрудники</Link>,
 	},
 	{
 		key: '/pharmacies',
 		icon: <Building2 size={18} />,
-		label: <Link to='/pharmacies'>Pharmacies</Link>,
+		label: <Link to='/pharmacies'>Аптеки</Link>,
 	},
 	{
 		key: '/sales',
 		icon: <ShoppingCart size={18} />,
-		label: <Link to='/sales'>Sales</Link>,
+		label: <Link to='/sales'>Продажи</Link>,
 	},
 	{
 		key: '/orders',
 		icon: <Package size={18} />,
-		label: <Link to='/orders'>Orders</Link>,
+		label: <Link to='/orders'>Заказы</Link>,
 	},
 	{
 		key: '/medications',
 		icon: <Pill size={18} />,
-		label: <Link to='/medications'>Medications</Link>,
+		label: <Link to='/medications'>Лекарства</Link>,
 	},
 	{
 		key: '/reports',
 		icon: <FileBarChart size={18} />,
-		label: <Link to='/reports'>Reports</Link>,
+		label: <Link to='/reports'>Отчеты</Link>,
 	},
 ]
 
@@ -69,7 +70,7 @@ function Layout() {
 						color: '#4CAF50',
 					}}
 				>
-					Pharmacy Management System
+					Система управления аптекой
 				</div>
 			</Header>
 			<AntLayout>
@@ -88,6 +89,7 @@ function Layout() {
 						<Route path='/sales' element={<Sales />} />
 						<Route path='/orders' element={<Orders />} />
 						<Route path='/medications' element={<Medications />} />
+						<Route path='/reports' element={<Reports />} />
 						<Route path='/' element={<Employees />} />
 					</Routes>
 				</Content>

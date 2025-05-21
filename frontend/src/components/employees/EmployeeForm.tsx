@@ -1,4 +1,4 @@
-import { Button, Form, Input, Select } from 'antd'
+import { Button, Form, Input, Select, Space } from 'antd'
 import React from 'react'
 import { usePharmacies } from '../../hooks/usePharmacies'
 import { usePositions } from '../../hooks/usePositions'
@@ -23,39 +23,82 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 	const { data: positions } = usePositions()
 	const { data: pharmacies } = usePharmacies()
 
+	const handleSubmit = (values: any) => {
+		// Объединяем серию и номер паспорта
+		const passport = `${values.passportSeries} ${values.passportNumber}`
+		const submitValues = {
+			...values,
+			passport,
+		}
+		delete submitValues.passportSeries
+		delete submitValues.passportNumber
+		onSubmit(submitValues)
+	}
+
+	// Разделяем паспорт на серию и номер при инициализации формы
+	React.useEffect(() => {
+		if (initialValues?.passport) {
+			const [series, number] = initialValues.passport.split(' ')
+			form.setFieldsValue({
+				passportSeries: series,
+				passportNumber: number,
+			})
+		}
+	}, [initialValues, form])
+
 	return (
 		<Form
 			form={form}
 			layout='vertical'
 			initialValues={initialValues}
-			onFinish={onSubmit}
+			onFinish={handleSubmit}
 		>
 			<Form.Item
 				name='fullName'
-				label='Full Name'
+				label='ФИО'
 				rules={[
-					{ required: true, message: 'Please enter full name' },
-					{ min: 2, message: 'Name must be at least 2 characters' },
+					{ required: true, message: 'Пожалуйста, введите ФИО' },
+					{ min: 2, message: 'Имя должно содержать минимум 2 символа' },
 				]}
 			>
 				<Input />
 			</Form.Item>
 
-			<Form.Item
-				name='passport'
-				label='Passport'
-				rules={[
-					{ required: true, message: 'Please enter passport number' },
-					{ pattern: /^[A-Z0-9]+$/, message: 'Invalid passport format' },
-				]}
-			>
-				<Input />
+			<Form.Item label='Паспорт' required>
+				<Space>
+					<Form.Item
+						name='passportSeries'
+						rules={[
+							{ required: true, message: 'Введите серию' },
+							{
+								pattern: /^\d{4}$/,
+								message: 'Серия должна состоять из 4 цифр',
+							},
+						]}
+						noStyle
+					>
+						<Input maxLength={4} placeholder='Серия' style={{ width: 100 }} />
+					</Form.Item>
+					<Form.Item
+						name='passportNumber'
+						rules={[
+							{ required: true, message: 'Введите номер' },
+							{
+								pattern: /^\d{6}$/,
+								message: 'Номер должен состоять из 6 цифр',
+							},
+						]}
+						noStyle
+					>
+						<Input maxLength={6} placeholder='Номер' style={{ width: 150 }} />
+					</Form.Item>
+				</Space>
 			</Form.Item>
 
 			<Form.Item
 				name='positionId'
-				label='Position'
-				rules={[{ required: true, message: 'Please select position' }]}
+				label='Должность'
+				rules={[{ required: true, message: 'Пожалуйста, выберите должность' }]}
 			>
 				<Select>
 					{positions?.map(position => (
@@ -69,8 +112,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 			{!initialValues && (
 				<Form.Item
 					name='pharmacyId'
-					label='Pharmacy'
-					rules={[{ required: true, message: 'Please select pharmacy' }]}
+					label='Аптека'
+					rules={[{ required: true, message: 'Пожалуйста, выберите аптеку' }]}
 				>
 					<Select>
 						{pharmacies?.map(pharmacy => (
@@ -84,7 +127,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
 			<Form.Item>
 				<Button type='primary' htmlType='submit' loading={loading}>
-					{initialValues ? 'Update' : 'Create'} Employee
+					{initialValues ? 'Обновить' : 'Создать'} сотрудника
 				</Button>
 			</Form.Item>
 		</Form>
