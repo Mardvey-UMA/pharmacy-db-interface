@@ -185,4 +185,37 @@ public class OrderService {
                 .map(m -> m.getPrice().multiply(BigDecimal.valueOf(m.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public List<OrderDetailsDto> getClientOrdersWithDetails(Long clientId) {
+        List<ClientOrder> orders = orderRepo.findAllByClientId(clientId);
+        return orders.stream()
+                .map(this::convertToDetailsDto)
+                .toList();
+    }
+
+    private OrderDetailsDto convertToDetailsDto(ClientOrder order) {
+        List<OrderMedicationDto> meds = orderMedRepo.findByOrderId(order.getId())
+                .stream()
+                .map(m -> new OrderMedicationDto(
+                        m.getId(),
+                        m.getQuantity(),
+                        m.getPrice(),
+                        m.getMedication().getId(),
+                        m.getMedication().getMedicationName()
+                ))
+                .toList();
+
+        return new OrderDetailsDto(
+                order.getId(),
+                order.getOrderAddress(),
+                order.getOrderDate(),
+                order.getStatus(),
+                order.getClient().getId(),
+                order.getClient().getFullName(),
+                calculateTotal(order),
+                meds,
+                order.getAssemblers().stream().map(Employee::getId).toList(),
+                order.getCouriers().stream().map(Employee::getId).toList()
+        );
+    }
 }

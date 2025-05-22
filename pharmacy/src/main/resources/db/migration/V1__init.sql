@@ -1,7 +1,10 @@
 -- Клиент
 CREATE TABLE client(
                        id BIGSERIAL PRIMARY KEY,
-                       full_name TEXT
+                       full_name TEXT,
+                       username varchar(255),
+                       password varchar(255),
+                       user_role varchar(255)
 );
 
 -- Дисконтная карта

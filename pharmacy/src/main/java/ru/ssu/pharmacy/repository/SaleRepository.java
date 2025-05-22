@@ -24,4 +24,6 @@ public interface SaleRepository extends JpaRepository<Sale, Long>, JpaSpecificat
 //            @Param("to") LocalDate to
 //    );
     List<Sale> findAllByEmployeePharmacyId(Long pharmacyId);
+    List<Sale> findByDiscontCardClientId(Long clientId);
+
 }

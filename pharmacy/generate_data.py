@@ -27,17 +27,45 @@ def random_date(start_date=None, end_date=None):
     return start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
 
 
+user_counter = 1
 for _ in range(2000):
     full_name = fake.name()
-    cur.execute("INSERT INTO client (full_name) VALUES (%s) RETURNING id", (full_name,))
-    client_id = cur.fetchone()[0]
+    username = f"user{user_counter}"
+    password = f"user{user_counter}"
+    user_role = "USER"
 
+    cur.execute(
+        """INSERT INTO client
+            (full_name, username, password, user_role)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id""",
+        (full_name, username, password, user_role)
+    )
+    client_id = cur.fetchone()[0]
+    user_counter += 1
+
+    # Генерация скидочных карт (оставляем оригинальную логику)
     if random.random() < 0.9:
         discount = round(random.uniform(5, 15), 2)
         cur.execute(
             "INSERT INTO discont_card (discount, client_id) VALUES (%s, %s)",
             (discount, client_id)
         )
+
+# Добавляем администратора
+admin_full_name = fake.name()
+cur.execute(
+    """INSERT INTO client
+        (full_name, username, password, user_role)
+        VALUES (%s, 'admin', 'admin', 'ADMIN')
+        RETURNING id""",
+    (admin_full_name,)
+)
+admin_id = cur.fetchone()[0]
+print(admin_id)
+# conn.commit()
+# cur.close()
+# conn.close()
 
 pharmacies = []
 for _ in range(20):
