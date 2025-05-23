@@ -25,5 +25,12 @@ public interface SaleRepository extends JpaRepository<Sale, Long>, JpaSpecificat
 //    );
     List<Sale> findAllByEmployeePharmacyId(Long pharmacyId);
     List<Sale> findByDiscontCardClientId(Long clientId);
-
+    @Query("SELECT s FROM Sale s " +
+            "LEFT JOIN FETCH s.saleMedications sm " +
+            "LEFT JOIN FETCH sm.medication " +
+            "LEFT JOIN FETCH s.employee e " +
+            "LEFT JOIN FETCH e.pharmacy " +
+            "WHERE s.discontCard.client.id = :clientId")
+    List<Sale> findByDiscontCardClientIdWithDetails(@Param("clientId") Long clientId);
+    List<Sale> findByEmployeeId(Long employeeId);
 }

@@ -38,13 +38,13 @@ public class SaleService {
         List<Sale> sales = saleRepo.findAll(spec, Sort.by(Sort.Direction.DESC, "saleDate", "saleTime"));
 
         return sales.stream()
-                .map(sale -> new SaleDto(
-                        sale.getId(),
-                        sale.getSaleDate(),
-                        sale.getSaleTime(),
-                        sale.getEmployee() != null ? sale.getEmployee().getFullName() : null,
-                        sale.getDiscontCard() != null ? sale.getDiscontCard().getClient().getFullName() : null,
-                        calculateTotal(sale)
+                .map(s -> SaleDto.createBasic(
+                        s.getId(),
+                        s.getSaleDate(),
+                        s.getSaleTime(),
+                        s.getEmployee() != null ? s.getEmployee().getFullName() : null,
+                        s.getDiscontCard() != null ? s.getDiscontCard().getClient().getFullName() : null,
+                        calculateTotal(s)
                 ))
                 .toList();
     }

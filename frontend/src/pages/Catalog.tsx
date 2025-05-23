@@ -1,9 +1,9 @@
-import { Button, Input, message, Select, Space, Table } from 'antd'
+import { Button, Input, message, Modal, Select, Space, Table } from 'antd'
 import { format } from 'date-fns'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useMedications } from '../hooks/useMedications'
 import { usePharmacies } from '../hooks/usePharmacies'
-import { cartService } from '../services/cart'
+import { cartService, type CartItem } from '../services/cart'
 import { medicationService } from '../services/medicationService'
 import type { MedicationInPharmacy } from '../types/medication'
 
@@ -25,10 +25,26 @@ const Catalog: React.FC = () => {
 	const [isLoadingAll, setIsLoadingAll] = useState(false)
 	const [tableKey, setTableKey] = useState(0)
 	const [currentPage, setCurrentPage] = useState(1)
+	const [cartItems, setCartItems] = useState<CartItem[]>([])
 
 	const { data: pharmacies } = usePharmacies()
 	const { data: pharmacyMedications, isLoading: isLoadingPharmacy } =
 		useMedications(selectedPharmacyId)
+
+	useEffect(() => {
+		setCartItems(cartService.getCart())
+	}, [])
+
+	useEffect(() => {
+		const handleCartUpdate = () => {
+			setCartItems(cartService.getCart())
+		}
+
+		window.addEventListener('cartUpdated', handleCartUpdate)
+		return () => {
+			window.removeEventListener('cartUpdated', handleCartUpdate)
+		}
+	}, [])
 
 	useEffect(() => {
 		const fetchAllMedications = async () => {
@@ -54,12 +70,29 @@ const Catalog: React.FC = () => {
 	}, [pharmacies])
 
 	const handlePharmacyChange = (value: number | null) => {
-		setSelectedPharmacyId(value)
-		setSearchText('')
-		setSelectedForm(null)
-		setSelectedSubstance(null)
-		setTableKey(prev => prev + 1)
-		setCurrentPage(1)
+		if (selectedPharmacyId && cartItems.length > 0) {
+			Modal.confirm({
+				title: 'Смена аптеки',
+				content: 'При смене аптеки корзина будет очищена. Продолжить?',
+				onOk: () => {
+					cartService.clearCart()
+					setCartItems([])
+					setSelectedPharmacyId(value)
+					setSearchText('')
+					setSelectedForm(null)
+					setSelectedSubstance(null)
+					setTableKey(prev => prev + 1)
+					setCurrentPage(1)
+				},
+			})
+		} else {
+			setSelectedPharmacyId(value)
+			setSearchText('')
+			setSelectedForm(null)
+			setSelectedSubstance(null)
+			setTableKey(prev => prev + 1)
+			setCurrentPage(1)
+		}
 	}
 
 	const handleSearch = (value: string) => {
@@ -86,8 +119,21 @@ const Catalog: React.FC = () => {
 	}
 
 	const handleAddToCart = (medication: MedicationInPharmacy) => {
+		if (selectedPharmacyId === null) {
+			messageApi.warning('Пожалуйста, сначала выберите аптеку')
+			return
+		}
+
 		cartService.addToCart(medication)
+		setCartItems(cartService.getCart())
 		messageApi.success('Товар добавлен в корзину')
+	}
+
+	const isInCart = (medication: MedicationInPharmacy) => {
+		return cartItems.some(
+			item =>
+				item.id === medication.id && item.pharmacyId === medication.pharmacyId
+		)
 	}
 
 	const uniqueForms = useMemo(
@@ -101,9 +147,9 @@ const Catalog: React.FC = () => {
 	)
 
 	const filteredMedications = useMemo(() => {
-		const sourceData = selectedPharmacyId ? pharmacyMedications : allMedications
-		if (!sourceData) return []
+		if (!selectedPharmacyId) return []
 
+		const sourceData = pharmacyMedications || []
 		return sourceData.filter(med => {
 			const matchesSearch =
 				!searchText ||
@@ -119,7 +165,6 @@ const Catalog: React.FC = () => {
 	}, [
 		selectedPharmacyId,
 		pharmacyMedications,
-		allMedications,
 		searchText,
 		selectedForm,
 		selectedSubstance,
@@ -184,18 +229,21 @@ const Catalog: React.FC = () => {
 			{
 				title: 'Действия',
 				key: 'actions',
-				render: (_: unknown, record: MedicationInPharmacy) => (
-					<Button
-						type='primary'
-						onClick={() => handleAddToCart(record)}
-						disabled={record.quantity <= 0}
-					>
-						В корзину
-					</Button>
-				),
+				render: (_: unknown, record: MedicationInPharmacy) => {
+					const inCart = isInCart(record)
+					return (
+						<Button
+							type={inCart ? 'default' : 'primary'}
+							onClick={() => handleAddToCart(record)}
+							disabled={record.quantity <= 0 || inCart}
+						>
+							{inCart ? 'В корзине' : 'В корзину'}
+						</Button>
+					)
+				},
 			},
 		],
-		[pharmacies]
+		[pharmacies, cartItems]
 	)
 
 	return (

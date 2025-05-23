@@ -73,18 +73,45 @@ public class ClientController {
 
     @GetMapping("/{id}/sales")
     public List<SaleDto> getClientSales(@PathVariable Long id) {
-        List<Sale> sales = saleRepository.findByDiscontCardClientId(id);
+        List<Sale> sales = saleRepository.findByDiscontCardClientIdWithDetails(id);
         return sales.stream()
-                .map(s -> new SaleDto(
-                        s.getId(),
-                        s.getSaleDate(),
-                        s.getSaleTime(),
-                        s.getEmployee() != null ? s.getEmployee().getFullName() : null,
-                        s.getDiscontCard() != null ? s.getDiscontCard().getClient().getFullName() : null,
-                        s.getSaleMedications().stream()
-                                .map(sm -> sm.getPrice().multiply(BigDecimal.valueOf(sm.getQuantity())))
-                                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                ))
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    private SaleDto convertToDto(Sale sale) {
+        return new SaleDto(
+                sale.getId(),
+                sale.getSaleDate(),
+                sale.getSaleTime(),
+                sale.getEmployee() != null ? sale.getEmployee().getFullName() : null,
+                sale.getDiscontCard() != null ? sale.getDiscontCard().getClient().getFullName() : null,
+                calculateTotal(sale),
+                getPharmacyName(sale),
+                getSaleItems(sale)
+        );
+    }
+
+    private String getPharmacyName(Sale sale) {
+        return sale.getEmployee() != null && sale.getEmployee().getPharmacy() != null
+                ? sale.getEmployee().getPharmacy().getPharmacyAddress()
+                : null;
+    }
+
+    private List<SaleDto.SaleItemDto> getSaleItems(Sale sale) {
+        return sale.getSaleMedications().stream()
+                .map(sm -> new SaleDto.SaleItemDto(
+                        sm.getMedication().getId(),
+                        sm.getMedication().getMedicationName(),
+                        sm.getQuantity(),
+                        sm.getPrice()
+                ))
+                .toList();
+    }
+
+    private BigDecimal calculateTotal(Sale sale) {
+        return sale.getSaleMedications().stream()
+                .map(sm -> sm.getPrice().multiply(BigDecimal.valueOf(sm.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

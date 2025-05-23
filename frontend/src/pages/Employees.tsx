@@ -1,5 +1,10 @@
-import { EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Input, Modal, Space, Table } from 'antd'
+import {
+	EditOutlined,
+	ExclamationCircleOutlined,
+	InfoCircleOutlined,
+	PlusOutlined,
+} from '@ant-design/icons'
+import { Button, Input, Modal, Space, Table, Typography } from 'antd'
 import React, { useState } from 'react'
 import EmployeeForm from '../components/employees/EmployeeForm'
 import { useDebounce } from '../hooks/useDebounce'
@@ -12,13 +17,26 @@ import {
 import { Employee } from '../types/employee'
 
 const { Search } = Input
+const { Title, Text } = Typography
+const { confirm } = Modal
 
 const Employees: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState('')
 	const [isModalVisible, setIsModalVisible] = useState(false)
-	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-		null
-	)
+	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+	const [showChangesModal, setShowChangesModal] = useState(false)
+	const [changesData, setChangesData] = useState<{
+		deletedEmployeeName: string
+		pharmacyAddress: string
+		positionDescription: string
+		changes: Array<{
+			entityType: 'ORDER' | 'SALE'
+			entityId: number
+			role: string
+			newEmployeeId: number
+			newEmployeeName: string
+		}>
+	} | null>(null)
 
 	const debouncedSearch = useDebounce(searchTerm, 300)
 
@@ -26,6 +44,34 @@ const Employees: React.FC = () => {
 	const createMutation = useCreateEmployee()
 	const updateMutation = useUpdateEmployee()
 	const deleteMutation = useDeleteEmployee()
+
+	const handleDelete = (employee: Employee) => {
+		setSelectedEmployee(employee)
+		confirm({
+			title: 'Увольнение сотрудника',
+			icon: <ExclamationCircleOutlined />,
+			content: (
+				<div>
+					<p>Вы уверены, что хотите уволить сотрудника {employee.fullName}?</p>
+					<p>
+						Это действие приведет к перераспределению его заказов и продаж
+						другим сотрудникам.
+					</p>
+				</div>
+			),
+			okText: 'Да, уволить',
+			okType: 'danger',
+			cancelText: 'Отмена',
+			onOk: async () => {
+				if (selectedEmployee) {
+					const result = await deleteMutation.mutateAsync(selectedEmployee.id)
+					setChangesData(result)
+					setShowChangesModal(true)
+					setSelectedEmployee(null)
+				}
+			},
+		})
+	}
 
 	const columns = [
 		{
@@ -63,6 +109,9 @@ const Employees: React.FC = () => {
 							setIsModalVisible(true)
 						}}
 					/>
+					<Button type='link' danger onClick={() => handleDelete(record)}>
+						Уволить
+					</Button>
 				</Space>
 			),
 		},
@@ -126,6 +175,45 @@ const Employees: React.FC = () => {
 					onSubmit={handleSubmit}
 					loading={createMutation.isPending || updateMutation.isPending}
 				/>
+			</Modal>
+
+			<Modal
+				title='Информация о перераспределении'
+				open={showChangesModal}
+				onCancel={() => setShowChangesModal(false)}
+				footer={[
+					<Button key="close" onClick={() => setShowChangesModal(false)}>
+						Закрыть
+					</Button>
+				]}
+				icon={<InfoCircleOutlined />}
+			>
+				{changesData && (
+					<div className="space-y-4">
+						<div>
+							<Text strong>Уволенный сотрудник:</Text>
+							<p>{changesData.deletedEmployeeName}</p>
+							<p>Должность: {changesData.positionDescription}</p>
+							<p>Аптека: {changesData.pharmacyAddress}</p>
+						</div>
+						
+						<div>
+							<Text strong>Перераспределенные задачи:</Text>
+							{changesData.changes.length > 0 ? (
+								<ul className="list-disc pl-5">
+									{changesData.changes.map((change, index) => (
+										<li key={index}>
+											{change.entityType === 'ORDER' ? 'Заказ' : 'Продажа'} #{change.entityId} 
+											(роль: {change.role}) передан сотруднику {change.newEmployeeName}
+										</li>
+									))}
+								</ul>
+							) : (
+								<p>Нет перераспределенных задач</p>
+							)}
+						</div>
+					</div>
+				)}
 			</Modal>
 		</div>
 	)

@@ -11,10 +11,11 @@ export interface RegisterRequestDto {
 
 export interface AuthResponse {
 	userId: number
-	role: 'ADMIN' | 'USER'
 	username: string
+	fullName: string
+	role: string
 	discountCardId: number
-	discount: number
+	token: string
 }
 
 export interface User {

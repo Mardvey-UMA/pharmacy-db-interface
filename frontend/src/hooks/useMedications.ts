@@ -5,7 +5,12 @@ import type { Medication } from '../types/medication'
 export const useMedications = (pharmacyId: number | null) => {
 	return useQuery({
 		queryKey: ['medications', pharmacyId],
-		queryFn: () => medicationService.getByPharmacy(pharmacyId!),
+		queryFn: async () => {
+			console.log('Fetching medications for pharmacy:', pharmacyId)
+			const result = await medicationService.getByPharmacy(pharmacyId!)
+			console.log('Received medications:', result)
+			return result
+		},
 		enabled: !!pharmacyId,
 	})
 }

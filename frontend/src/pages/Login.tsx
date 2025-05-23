@@ -11,7 +11,7 @@ export default function Login() {
 			const response = await authService.login(values)
 			authService.setAuthData(response)
 			message.success('Успешная авторизация')
-			navigate('/')
+			navigate('/profile')
 		} catch (error) {
 			message.error('Ошибка при авторизации')
 		}

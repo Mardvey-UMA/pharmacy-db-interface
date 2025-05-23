@@ -35,11 +35,15 @@ const Cart: React.FC = () => {
 	) => {
 		cartService.updateQuantity(itemId, pharmacyId, quantity)
 		setCartItems(cartService.getCart())
+		// Уведомляем каталог об изменениях
+		window.dispatchEvent(new Event('cartUpdated'))
 	}
 
 	const handleRemoveItem = (itemId: number, pharmacyId: number) => {
 		cartService.removeFromCart(itemId, pharmacyId)
 		setCartItems(cartService.getCart())
+		// Уведомляем каталог об изменениях
+		window.dispatchEvent(new Event('cartUpdated'))
 	}
 
 	const handleCreateOrder = async (values: { orderAddress: string }) => {
@@ -127,7 +131,7 @@ const Cart: React.FC = () => {
 								record.quantity + 1
 							)
 						}
-						disabled={record.quantity >= record.quantity}
+						disabled={record.quantity >= 100}
 					>
 						+
 					</Button>

@@ -1,3 +1,12 @@
 package ru.ssu.pharmacy.dto.auth;
 
-public record AuthResponseDto(Long id, String username, String role) {}
+import java.math.BigDecimal;
+
+public record AuthResponseDto(
+        String fullName,
+        Long userId,
+        String username,
+        String role,
+        Long discountCardId,
+        BigDecimal discount
+) {}

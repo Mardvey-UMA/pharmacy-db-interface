@@ -30,6 +30,7 @@ import Register from '../pages/Register'
 import Reports from '../pages/Reports'
 import Sales from '../pages/Sales'
 import UserOrders from '../pages/UserOrders'
+import UserPharmacies from '../pages/UserPharmacies'
 import UserSales from '../pages/UserSales'
 import { authService } from '../services/auth'
 
@@ -73,6 +74,11 @@ const userMenuItems = [
 		key: 'profile',
 		icon: <UserOutlined />,
 		label: <Link to='/profile'>Личный кабинет</Link>,
+	},
+	{
+		key: 'pharmacies',
+		icon: <ShopOutlined />,
+		label: <Link to='/pharmacies'>Аптеки</Link>,
 	},
 	{
 		key: 'catalog',
@@ -124,17 +130,9 @@ const Layout: React.FC = () => {
 					<div className='flex items-center gap-2 mb-4'>
 						<UserOutlined className='text-xl' />
 						<span className='font-medium'>
-							{authService.getAuthData()?.username}
+							{authService.getAuthData()?.fullName}
 						</span>
 					</div>
-					<Button
-						type='text'
-						icon={<LogoutOutlined />}
-						onClick={handleLogout}
-						className='w-full text-left'
-					>
-						Выйти
-					</Button>
 				</div>
 				<Menu
 					mode='inline'
@@ -143,7 +141,11 @@ const Layout: React.FC = () => {
 				/>
 			</Sider>
 			<AntLayout>
-				<Header className='bg-white p-0' />
+				<Header className='bg-white p-0 flex justify-end items-center pr-6'>
+					<Button type='text' icon={<LogoutOutlined />} onClick={handleLogout}>
+						Выйти
+					</Button>
+				</Header>
 				<Content className='m-6'>
 					<Routes>
 						<Route path='/login' element={<Login />} />
@@ -158,6 +160,7 @@ const Layout: React.FC = () => {
 							<Route path='reports' element={<Reports />} />
 						</Route>
 						<Route path='/profile' element={<Profile />} />
+						<Route path='/pharmacies' element={<UserPharmacies />} />
 						<Route path='/catalog' element={<Catalog />} />
 						<Route path='/cart' element={<Cart />} />
 						<Route path='/my-orders' element={<UserOrders />} />

@@ -45,12 +45,11 @@ for _ in range(2000):
     user_counter += 1
 
     # Генерация скидочных карт (оставляем оригинальную логику)
-    if random.random() < 0.9:
-        discount = round(random.uniform(5, 15), 2)
-        cur.execute(
-            "INSERT INTO discont_card (discount, client_id) VALUES (%s, %s)",
-            (discount, client_id)
-        )
+    discount = round(random.uniform(5, 15), 2)
+    cur.execute(
+        "INSERT INTO discont_card (discount, client_id) VALUES (%s, %s)",
+        (discount, client_id)
+    )
 
 # Добавляем администратора
 admin_full_name = fake.name()
@@ -186,12 +185,9 @@ for _ in range(3000):
         continue
     employee_id = employee_row[0]
 
-    if random.random() < 0.2:
-        cur.execute("SELECT id FROM discont_card ORDER BY random() LIMIT 1")
-        discount_card_row = cur.fetchone()
-        discount_card_id = discount_card_row[0] if discount_card_row else None
-    else:
-        discount_card_id = None
+    cur.execute("SELECT id FROM discont_card ORDER BY random() LIMIT 1")
+    discount_card_row = cur.fetchone()
+    discount_card_id = discount_card_row[0]
 
     cur.execute(
         "INSERT INTO sale (sale_date, sale_time, discont_card_id, employee_id) VALUES (%s, %s, %s, %s) RETURNING id",

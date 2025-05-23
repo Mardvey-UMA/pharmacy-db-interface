@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.ssu.pharmacy.dto.employee.EmployeeCreateDto;
+import ru.ssu.pharmacy.dto.employee.EmployeeDeleteResponseDto;
 import ru.ssu.pharmacy.dto.employee.EmployeeDto;
 import ru.ssu.pharmacy.dto.employee.EmployeeUpdateDto;
 import ru.ssu.pharmacy.service.EmployeeService;
@@ -39,8 +40,14 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        employeeService.delete(id);
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            EmployeeDeleteResponseDto result = employeeService.delete(id);
+            return ResponseEntity.ok(result);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        }
     }
+
 }
 

@@ -4,19 +4,20 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.StoredProcedureQuery;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.ssu.pharmacy.dto.employee.EmployeeCreateDto;
-import ru.ssu.pharmacy.dto.employee.EmployeeDto;
-import ru.ssu.pharmacy.dto.employee.EmployeeUpdateDto;
+import ru.ssu.pharmacy.dto.employee.*;
+import ru.ssu.pharmacy.entity.ClientOrder;
 import ru.ssu.pharmacy.entity.Employee;
+import ru.ssu.pharmacy.entity.Sale;
 import ru.ssu.pharmacy.mapper.EmployeeMapper;
-import ru.ssu.pharmacy.repository.EmployeeRepository;
-import ru.ssu.pharmacy.repository.PharmacyRepository;
-import ru.ssu.pharmacy.repository.PositionRepository;
+import ru.ssu.pharmacy.repository.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 @Service
@@ -27,6 +28,8 @@ public class EmployeeService {
     private final PharmacyRepository pharmacyRepo;
     private final PositionRepository positionRepo;
     private final EmployeeMapper employeeMapper;
+    private final ClientOrderRepository orderRepo;
+    private final SaleRepository saleRepo;
 
     @PersistenceContext
     private EntityManager em;
@@ -81,8 +84,72 @@ public class EmployeeService {
         return getById(employeeRepo.save(emp).getId());
     }
 
-    public void delete(Long id) {
-        employeeRepo.deleteById(id);
+    @Transactional
+    public EmployeeDeleteResponseDto delete(Long id) {
+
+        Employee victim = employeeRepo.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Сотрудник не найден"));
+
+        // 1. ищем замену
+        List<Employee> pool = employeeRepo
+                .findByPharmacyIdAndPositionIdAndIdNot(
+                        victim.getPharmacy().getId(),
+                        victim.getPosition().getId(),
+                        id);
+
+        if (pool.isEmpty()) {
+            throw new IllegalStateException(
+                    "Невозможно удалить – в \"" +
+                            victim.getPharmacy().getPharmacyAddress() +
+                            "\" больше нет сотрудников-" +
+                            victim.getPosition().getPositionDescription());
+        }
+
+        int cursor = 0;                   // для round-robin
+        List<AssignmentChangeDto> log = new ArrayList<>();
+
+        /* --- Заказы: сборщики --- */
+        for (ClientOrder o : orderRepo.findAllByAssemblerId(id)) {
+            Employee newEmp = pool.get(cursor++ % pool.size());
+            o.getAssemblers().remove(victim);
+            o.getAssemblers().add(newEmp);
+
+            log.add(new AssignmentChangeDto(
+                    "ORDER", o.getId(), "ASSEMBLER",
+                    newEmp.getId(), newEmp.getFullName()));
+        }
+
+        /* --- Заказы: курьеры --- */
+        for (ClientOrder o : orderRepo.findAllByCourierId(id)) {
+            Employee newEmp = pool.get(cursor++ % pool.size());
+            o.getCouriers().remove(victim);
+            o.getCouriers().add(newEmp);
+
+            log.add(new AssignmentChangeDto(
+                    "ORDER", o.getId(), "COURIER",
+                    newEmp.getId(), newEmp.getFullName()));
+        }
+
+        /* --- Продажи --- */
+        for (Sale s : saleRepo.findByEmployeeId(id)) {
+            Employee newEmp = pool.get(cursor++ % pool.size());
+            s.setEmployee(newEmp);
+
+            log.add(new AssignmentChangeDto(
+                    "SALE", s.getId(), "SALE_EMPLOYEE",
+                    newEmp.getId(), newEmp.getFullName()));
+        }
+
+        // flush/merge выполнятся автоматически по завершении @Transactional
+        employeeRepo.delete(victim);
+
+        return new EmployeeDeleteResponseDto(
+                victim.getId(),
+                victim.getFullName(),
+                victim.getPharmacy().getPharmacyAddress(),
+                victim.getPosition().getPositionDescription(),
+                log
+        );
     }
 
     private BigDecimal calculateFinalSalary(Employee employee) {
