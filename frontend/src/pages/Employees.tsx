@@ -1,10 +1,23 @@
 import {
+	ArrowRightOutlined,
+	CheckCircleOutlined,
 	EditOutlined,
 	ExclamationCircleOutlined,
 	InfoCircleOutlined,
 	PlusOutlined,
 } from '@ant-design/icons'
-import { Button, Input, Modal, Space, Table, Typography } from 'antd'
+import {
+	Button,
+	Card,
+	Input,
+	List,
+	Modal,
+	Space,
+	Table,
+	Tag,
+	Tooltip,
+	Typography,
+} from 'antd'
 import React, { useState } from 'react'
 import EmployeeForm from '../components/employees/EmployeeForm'
 import { useDebounce } from '../hooks/useDebounce'
@@ -23,7 +36,9 @@ const { confirm } = Modal
 const Employees: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState('')
 	const [isModalVisible, setIsModalVisible] = useState(false)
-	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+		null
+	)
 	const [showChangesModal, setShowChangesModal] = useState(false)
 	const [changesData, setChangesData] = useState<{
 		deletedEmployeeName: string
@@ -46,7 +61,6 @@ const Employees: React.FC = () => {
 	const deleteMutation = useDeleteEmployee()
 
 	const handleDelete = (employee: Employee) => {
-		setSelectedEmployee(employee)
 		confirm({
 			title: 'Увольнение сотрудника',
 			icon: <ExclamationCircleOutlined />,
@@ -63,12 +77,9 @@ const Employees: React.FC = () => {
 			okType: 'danger',
 			cancelText: 'Отмена',
 			onOk: async () => {
-				if (selectedEmployee) {
-					const result = await deleteMutation.mutateAsync(selectedEmployee.id)
-					setChangesData(result)
-					setShowChangesModal(true)
-					setSelectedEmployee(null)
-				}
+				const result = await deleteMutation.mutateAsync(employee.id)
+				setChangesData(result)
+				setShowChangesModal(true)
 			},
 		})
 	}
@@ -178,40 +189,131 @@ const Employees: React.FC = () => {
 			</Modal>
 
 			<Modal
-				title='Информация о перераспределении'
+				title={
+					<Space>
+						<InfoCircleOutlined style={{ color: '#1890ff' }} />
+						<span>Информация о перераспределении</span>
+					</Space>
+				}
 				open={showChangesModal}
 				onCancel={() => setShowChangesModal(false)}
 				footer={[
-					<Button key="close" onClick={() => setShowChangesModal(false)}>
+					<Button
+						key='close'
+						type='primary'
+						onClick={() => setShowChangesModal(false)}
+					>
 						Закрыть
-					</Button>
+					</Button>,
 				]}
-				icon={<InfoCircleOutlined />}
+				width={700}
 			>
 				{changesData && (
-					<div className="space-y-4">
-						<div>
-							<Text strong>Уволенный сотрудник:</Text>
-							<p>{changesData.deletedEmployeeName}</p>
-							<p>Должность: {changesData.positionDescription}</p>
-							<p>Аптека: {changesData.pharmacyAddress}</p>
-						</div>
-						
-						<div>
-							<Text strong>Перераспределенные задачи:</Text>
-							{changesData.changes.length > 0 ? (
-								<ul className="list-disc pl-5">
-									{changesData.changes.map((change, index) => (
-										<li key={index}>
-											{change.entityType === 'ORDER' ? 'Заказ' : 'Продажа'} #{change.entityId} 
-											(роль: {change.role}) передан сотруднику {change.newEmployeeName}
-										</li>
-									))}
-								</ul>
-							) : (
-								<p>Нет перераспределенных задач</p>
-							)}
-						</div>
+					<div className='space-y-6'>
+						<Card bordered={false} className='bg-gray-50'>
+							<Space direction='vertical' size='middle' className='w-full'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<Typography.Title level={5} className='mb-0'>
+											Уволенный сотрудник
+										</Typography.Title>
+										<Typography.Text type='secondary'>
+											Информация о сотруднике и его должности
+										</Typography.Text>
+									</div>
+									<Tag color='red' icon={<ExclamationCircleOutlined />}>
+										Уволен
+									</Tag>
+								</div>
+
+								<List
+									itemLayout='horizontal'
+									dataSource={[
+										{
+											label: 'ФИО',
+											value: changesData.deletedEmployeeName,
+										},
+										{
+											label: 'Должность',
+											value: changesData.positionDescription,
+										},
+										{
+											label: 'Аптека',
+											value: changesData.pharmacyAddress,
+										},
+									]}
+									renderItem={item => (
+										<List.Item>
+											<div className='flex justify-between w-full'>
+												<Typography.Text strong>{item.label}:</Typography.Text>
+												<Typography.Text>{item.value}</Typography.Text>
+											</div>
+										</List.Item>
+									)}
+								/>
+							</Space>
+						</Card>
+
+						<Card bordered={false} className='bg-gray-50'>
+							<Space direction='vertical' size='middle' className='w-full'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<Typography.Title level={5} className='mb-0'>
+											Перераспределенные задачи
+										</Typography.Title>
+										<Typography.Text type='secondary'>
+											Список задач, переданных другим сотрудникам
+										</Typography.Text>
+									</div>
+									<Tag color='blue' icon={<CheckCircleOutlined />}>
+										{changesData.changes.length} задач
+									</Tag>
+								</div>
+
+								{changesData.changes.length > 0 ? (
+									<List
+										itemLayout='horizontal'
+										dataSource={changesData.changes}
+										renderItem={change => (
+											<List.Item>
+												<div className='flex items-center justify-between w-full'>
+													<Space>
+														<Tag
+															color={
+																change.entityType === 'ORDER' ? 'green' : 'blue'
+															}
+														>
+															{change.entityType === 'ORDER'
+																? 'Заказ'
+																: 'Продажа'}{' '}
+															#{change.entityId}
+														</Tag>
+														<Tag color='purple'>{change.role}</Tag>
+													</Space>
+													<Space>
+														<Typography.Text type='secondary'>
+															передан
+														</Typography.Text>
+														<ArrowRightOutlined style={{ color: '#1890ff' }} />
+														<Tooltip title='Новый ответственный'>
+															<Tag color='success'>
+																{change.newEmployeeName}
+															</Tag>
+														</Tooltip>
+													</Space>
+												</div>
+											</List.Item>
+										)}
+									/>
+								) : (
+									<div className='text-center py-4'>
+										<Typography.Text type='secondary'>
+											Нет перераспределенных задач
+										</Typography.Text>
+									</div>
+								)}
+							</Space>
+						</Card>
 					</div>
 				)}
 			</Modal>
