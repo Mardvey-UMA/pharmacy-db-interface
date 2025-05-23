@@ -2,52 +2,40 @@ import { useQuery } from '@tanstack/react-query'
 import { Button, Card, Modal, Space, Spin, Table, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { useState } from 'react'
-import OrderForm from '../components/orders/OrderForm'
-import { useCreateOrder } from '../hooks/useOrders'
-import { OrderDto, ordersService } from '../services/orders'
-import type { OrderCreateDto } from '../types/order'
+import SaleForm from '../components/sales/SaleForm'
+import { useCreateSale } from '../hooks/useSales'
+import { SaleDto, salesService } from '../services/sales'
+import type { SaleRequest } from '../types/sale'
 
 const { Title } = Typography
 
-export default function UserOrders() {
+export default function UserSales() {
 	const [isCreateModalVisible, setIsCreateModalVisible] = useState(false)
-	const createMutation = useCreateOrder()
+	const createMutation = useCreateSale()
 
-	const { data: orders, isLoading } = useQuery({
-		queryKey: ['userOrders'],
-		queryFn: ordersService.getUserOrders,
+	const { data: sales, isLoading } = useQuery({
+		queryKey: ['userSales'],
+		queryFn: salesService.getUserSales,
 	})
 
 	const columns = [
 		{
-			title: 'Дата заказа',
-			dataIndex: 'orderDate',
-			key: 'orderDate',
-			render: (date: string) => dayjs(date).format('DD.MM.YYYY'),
-		},
-		{
-			title: 'Статус',
-			dataIndex: 'status',
-			key: 'status',
-			render: (status: string) => {
-				const statusColors: Record<string, string> = {
-					сборка: 'blue',
-					обработка: 'orange',
-					доставка: 'purple',
-					выполнен: 'green',
-					отменен: 'red',
-				}
-				return (
-					<span style={{ color: statusColors[status] || 'gray' }}>
-						{status}
-					</span>
-				)
+			title: 'Дата покупки',
+			dataIndex: 'saleDate',
+			key: 'saleDate',
+			render: (date: string, record: SaleDto) => {
+				return `${dayjs(date).format('DD.MM.YYYY')} ${record.saleTime}`
 			},
 		},
 		{
-			title: 'Адрес доставки',
-			dataIndex: 'orderAddress',
-			key: 'orderAddress',
+			title: 'Аптека',
+			dataIndex: 'pharmacyName',
+			key: 'pharmacyName',
+		},
+		{
+			title: 'Продавец',
+			dataIndex: 'employeeName',
+			key: 'employeeName',
 		},
 		{
 			title: 'Сумма',
@@ -57,7 +45,7 @@ export default function UserOrders() {
 		},
 	]
 
-	const handleCreateOrder = async (values: OrderCreateDto) => {
+	const handleCreateSale = async (values: SaleRequest) => {
 		await createMutation.mutateAsync(values)
 		setIsCreateModalVisible(false)
 	}
@@ -82,27 +70,30 @@ export default function UserOrders() {
 						alignItems: 'center',
 					}}
 				>
-					<Title level={2}>Мои заказы</Title>
+					<Title level={2}>Мои покупки</Title>
 					<Button type='primary' onClick={() => setIsCreateModalVisible(true)}>
-						Новый заказ
+						Новая покупка
 					</Button>
 				</div>
 				<Table
-					dataSource={orders}
+					dataSource={sales}
 					columns={columns}
 					rowKey='id'
 					pagination={{ pageSize: 10 }}
 					expandable={{
-						expandedRowRender: (record: OrderDto) => (
+						expandedRowRender: (record: SaleDto) => (
 							<div style={{ padding: '20px' }}>
 								<p>
-									<strong>ID заказа:</strong> {record.id}
+									<strong>ID покупки:</strong> {record.id}
+								</p>
+								<p>
+									<strong>Покупатель:</strong> {record.clientName}
 								</p>
 								<p>
 									<strong>Товары:</strong>
 								</p>
 								<ul>
-									{record.medications.map(item => (
+									{record.items.map(item => (
 										<li key={item.medicationId}>
 											{item.medicationName} - {item.quantity} шт. (
 											{item.price.toFixed(2)} ₽)
@@ -116,14 +107,14 @@ export default function UserOrders() {
 			</Space>
 
 			<Modal
-				title='Создать новый заказ'
+				title='Создать новую покупку'
 				open={isCreateModalVisible}
 				onCancel={() => setIsCreateModalVisible(false)}
 				width={800}
 				footer={null}
 			>
-				<OrderForm
-					onSubmit={handleCreateOrder}
+				<SaleForm
+					onSubmit={handleCreateSale}
 					loading={createMutation.isPending}
 					isUserMode={true}
 				/>

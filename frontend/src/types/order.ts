@@ -36,9 +36,14 @@ export interface OrderCreateDto {
 	clientId: number
 	pharmacyId: number
 	orderAddress: string
-	medications: OrderMedicationCreate[]
-	assemblerIds: number[]
-	courierIds: number[]
+	medications: {
+		medicationId: number
+		quantity: number
+		price: number
+	}[]
+	assemblerId: number
+	courierId: number
+	discountCardId: number
 }
 
 export interface OrderMedicationCreate {

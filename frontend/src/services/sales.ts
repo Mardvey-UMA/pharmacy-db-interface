@@ -3,32 +3,32 @@ import { authService } from './auth'
 
 const API_URL = 'http://localhost:8080/api'
 
-export interface Medication {
+export interface SaleItem {
 	medicationId: number
 	medicationName: string
 	quantity: number
 	price: number
 }
 
-export interface OrderDto {
+export interface SaleDto {
 	id: number
-	orderAddress: string
-	orderDate: string
-	status: string
-	clientId: number
+	saleDate: string
+	saleTime: string
+	employeeName: string
 	clientName: string
 	total: number
-	medications: Medication[]
+	pharmacyName: string
+	items: SaleItem[]
 }
 
-export const ordersService = {
-	async getUserOrders(): Promise<OrderDto[]> {
+export const salesService = {
+	async getUserSales(): Promise<SaleDto[]> {
 		const user = authService.getAuthData()
 		if (!user?.userId) {
 			throw new Error('Пользователь не авторизован')
 		}
 
-		const response = await axios.get(`${API_URL}/clients/${user.userId}/orders`)
+		const response = await axios.get(`${API_URL}/clients/${user.userId}/sales`)
 		return response.data
 	},
 }

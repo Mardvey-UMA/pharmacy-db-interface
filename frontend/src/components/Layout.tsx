@@ -1,18 +1,25 @@
+import {
+	BarChartOutlined,
+	LogoutOutlined,
+	MedicineBoxOutlined,
+	RedditOutlined,
+	ShopOutlined,
+	ShoppingCartOutlined,
+	ShoppingOutlined,
+	TeamOutlined,
+	UserOutlined,
+} from '@ant-design/icons'
 import { Layout as AntLayout, Button, Menu } from 'antd'
 import {
-	Building2,
-	FileBarChart,
-	Package,
-	Pill,
-	ShoppingBag,
-	ShoppingBasket,
-	ShoppingCart,
-	User,
-	Users,
-} from 'lucide-react'
-import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import BuyMedication from '../pages/BuyMedication'
+	Link,
+	Navigate,
+	Route,
+	Routes,
+	useLocation,
+	useNavigate,
+} from 'react-router-dom'
 import Cart from '../pages/Cart'
+import Catalog from '../pages/Catalog'
 import Employees from '../pages/Employees'
 import Login from '../pages/Login'
 import Medications from '../pages/Medications'
@@ -23,140 +30,138 @@ import Register from '../pages/Register'
 import Reports from '../pages/Reports'
 import Sales from '../pages/Sales'
 import UserOrders from '../pages/UserOrders'
+import UserSales from '../pages/UserSales'
 import { authService } from '../services/auth'
 
 const { Header, Sider, Content } = AntLayout
 
 const adminMenuItems = [
 	{
-		key: '/employees',
-		icon: <Users size={18} />,
-		label: <Link to='/employees'>Сотрудники</Link>,
+		key: 'medications',
+		icon: <MedicineBoxOutlined />,
+		label: <Link to='/admin/medications'>Лекарства</Link>,
 	},
 	{
-		key: '/pharmacies',
-		icon: <Building2 size={18} />,
-		label: <Link to='/pharmacies'>Аптеки</Link>,
+		key: 'pharmacies',
+		icon: <ShopOutlined />,
+		label: <Link to='/admin/pharmacies'>Аптеки</Link>,
 	},
 	{
-		key: '/sales',
-		icon: <ShoppingCart size={18} />,
-		label: <Link to='/sales'>Продажи</Link>,
+		key: 'employees',
+		icon: <TeamOutlined />,
+		label: <Link to='/admin/employees'>Сотрудники</Link>,
 	},
 	{
-		key: '/orders',
-		icon: <Package size={18} />,
-		label: <Link to='/orders'>Заказы</Link>,
+		key: 'sales',
+		icon: <ShoppingOutlined />,
+		label: <Link to='/admin/sales'>Продажи</Link>,
 	},
 	{
-		key: '/medications',
-		icon: <Pill size={18} />,
-		label: <Link to='/medications'>Лекарства</Link>,
+		key: 'orders',
+		icon: <ShoppingOutlined />,
+		label: <Link to='/admin/orders'>Заказы</Link>,
 	},
 	{
-		key: '/reports',
-		icon: <FileBarChart size={18} />,
-		label: <Link to='/reports'>Отчеты</Link>,
+		key: 'reports',
+		icon: <BarChartOutlined />,
+		label: <Link to='/admin/reports'>Отчеты</Link>,
 	},
 ]
 
 const userMenuItems = [
 	{
-		key: '/profile',
-		icon: <User size={18} />,
+		key: 'profile',
+		icon: <UserOutlined />,
 		label: <Link to='/profile'>Личный кабинет</Link>,
 	},
 	{
-		key: '/my-orders',
-		icon: <ShoppingBag size={18} />,
-		label: <Link to='/my-orders'>Мои заказы</Link>,
+		key: 'catalog',
+		icon: <MedicineBoxOutlined />,
+		label: <Link to='/catalog'>Каталог</Link>,
 	},
 	{
-		key: '/cart',
-		icon: <ShoppingBasket size={18} />,
+		key: 'cart',
+		icon: <ShoppingCartOutlined />,
 		label: <Link to='/cart'>Корзина</Link>,
 	},
 	{
-		key: '/buy-medication',
-		icon: <Pill size={18} />,
-		label: <Link to='/buy-medication'>Купить лекарство</Link>,
+		key: 'orders',
+		icon: <ShoppingOutlined />,
+		label: <Link to='/my-orders'>Мои заказы</Link>,
+	},
+	{
+		key: 'sales',
+		icon: <RedditOutlined />,
+		label: <Link to='/my-sales'>Мои покупки</Link>,
 	},
 ]
 
-function Layout() {
+const Layout: React.FC = () => {
 	const location = useLocation()
 	const navigate = useNavigate()
-	const isAuthenticated = authService.isAuthenticated()
-	const isAdmin = authService.isAdmin()
+	const isAdmin = authService.getAuthData()?.role === 'ADMIN'
+	const menuItems = isAdmin ? adminMenuItems : userMenuItems
 
 	const handleLogout = () => {
 		authService.logout()
 		navigate('/login')
 	}
 
-	if (!isAuthenticated) {
+	if (!authService.getAuthData()) {
 		return (
 			<Routes>
 				<Route path='/login' element={<Login />} />
 				<Route path='/register' element={<Register />} />
-				<Route path='*' element={<Login />} />
+				<Route path='*' element={<Navigate to='/login' replace />} />
 			</Routes>
 		)
 	}
 
 	return (
 		<AntLayout style={{ minHeight: '100vh' }}>
-			<Header
-				style={{
-					padding: '0 24px',
-					background: '#fff',
-					borderBottom: '1px solid #f0f0f0',
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
-				}}
-			>
-				<div
-					style={{
-						fontSize: '18px',
-						fontWeight: 'bold',
-						color: '#4CAF50',
-					}}
-				>
-					Система управления аптекой
+			<Sider width={250} theme='light'>
+				<div className='p-4'>
+					<div className='flex items-center gap-2 mb-4'>
+						<UserOutlined className='text-xl' />
+						<span className='font-medium'>
+							{authService.getAuthData()?.username}
+						</span>
+					</div>
+					<Button
+						type='text'
+						icon={<LogoutOutlined />}
+						onClick={handleLogout}
+						className='w-full text-left'
+					>
+						Выйти
+					</Button>
 				</div>
-				<Button onClick={handleLogout}>Выйти</Button>
-			</Header>
+				<Menu
+					mode='inline'
+					selectedKeys={[location.pathname.split('/').pop() || '']}
+					items={menuItems}
+				/>
+			</Sider>
 			<AntLayout>
-				<Sider width={200} style={{ background: '#fff' }}>
-					<Menu
-						mode='inline'
-						selectedKeys={[location.pathname]}
-						style={{ height: '100%', borderRight: 0 }}
-						items={isAdmin ? adminMenuItems : userMenuItems}
-					/>
-				</Sider>
-				<Content style={{ padding: '24px', minHeight: 280 }}>
+				<Header className='bg-white p-0' />
+				<Content className='m-6'>
 					<Routes>
-						{isAdmin ? (
-							<>
-								<Route path='/employees' element={<Employees />} />
-								<Route path='/pharmacies' element={<Pharmacies />} />
-								<Route path='/sales' element={<Sales />} />
-								<Route path='/orders' element={<Orders />} />
-								<Route path='/medications' element={<Medications />} />
-								<Route path='/reports' element={<Reports />} />
-								<Route path='/' element={<Employees />} />
-							</>
-						) : (
-							<>
-								<Route path='/profile' element={<Profile />} />
-								<Route path='/my-orders' element={<UserOrders />} />
-								<Route path='/cart' element={<Cart />} />
-								<Route path='/buy-medication' element={<BuyMedication />} />
-								<Route path='/' element={<Profile />} />
-							</>
-						)}
+						<Route path='/login' element={<Login />} />
+						<Route path='/register' element={<Register />} />
+						<Route path='*' element={<Navigate to='/login' replace />} />
+						<Route path='/admin'>
+							<Route path='medications' element={<Medications />} />
+							<Route path='pharmacies' element={<Pharmacies />} />
+							<Route path='employees' element={<Employees />} />
+							<Route path='sales' element={<Sales />} />
+							<Route path='orders' element={<Orders />} />
+							<Route path='reports' element={<Reports />} />
+						</Route>
+						<Route path='/profile' element={<Profile />} />
+						<Route path='/catalog' element={<Catalog />} />
+						<Route path='/cart' element={<Cart />} />
+						<Route path='/my-orders' element={<UserOrders />} />
+						<Route path='/my-sales' element={<UserSales />} />
 					</Routes>
 				</Content>
 			</AntLayout>

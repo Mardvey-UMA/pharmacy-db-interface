@@ -8,20 +8,29 @@ import {
 	Select,
 	Space,
 	Table,
+	Typography,
 } from 'antd'
 import React, { useEffect, useState } from 'react'
 import { useEmployees } from '../../hooks/useEmployees'
 import { useMedications } from '../../hooks/useMedications'
 import { usePharmacies } from '../../hooks/usePharmacies'
+import { authService } from '../../services/auth'
 import type { MedicationInPharmacy } from '../../types/medication'
 import type { OrderCreateDto } from '../../types/order'
 
 interface OrderFormProps {
 	onSubmit: (values: OrderCreateDto) => void
 	loading: boolean
+	isUserMode?: boolean
 }
 
-const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
+const { Text } = Typography
+
+const OrderForm: React.FC<OrderFormProps> = ({
+	onSubmit,
+	loading,
+	isUserMode = false,
+}) => {
 	const [form] = Form.useForm()
 	const { data: employees } = useEmployees()
 	const { data: pharmacies } = usePharmacies()
@@ -41,6 +50,12 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 		setSearchText('')
 	}, [])
 
+	const getRandomEmployees = (count: number) => {
+		if (!employees) return []
+		const shuffled = [...employees].sort(() => 0.5 - Math.random())
+		return shuffled.slice(0, count).map(emp => emp.id)
+	}
+
 	const handleSubmit = (values: any) => {
 		if (!values.medications || values.medications.length === 0) {
 			setIsModalVisible(true)
@@ -48,7 +63,9 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 		}
 
 		const orderRequest: OrderCreateDto = {
-			clientId: values.clientId,
+			clientId: isUserMode
+				? authService.getAuthData()?.userId
+				: values.clientId,
 			pharmacyId: values.pharmacyId,
 			orderAddress: values.orderAddress,
 			medications: values.medications.map((med: any) => ({
@@ -56,8 +73,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 				quantity: med.quantity,
 				price: med.price,
 			})),
-			assemblerIds: values.assemblerIds || [],
-			courierIds: values.courierIds || [],
+			assemblerIds: isUserMode ? getRandomEmployees(2) : values.assemblerIds,
+			courierIds: isUserMode ? getRandomEmployees(1) : values.courierIds,
 		}
 		onSubmit(orderRequest)
 		form.resetFields()
@@ -181,16 +198,18 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 				onFinish={handleSubmit}
 				initialValues={{ medications: [] }}
 			>
-				<Form.Item
-					name='clientId'
-					label='ID клиента'
-					rules={[
-						{ required: true, message: 'Пожалуйста, введите ID клиента' },
-						{ type: 'number', message: 'ID клиента должен быть числом' },
-					]}
-				>
-					<InputNumber style={{ width: '100%' }} />
-				</Form.Item>
+				{!isUserMode && (
+					<Form.Item
+						name='clientId'
+						label='ID клиента'
+						rules={[
+							{ required: true, message: 'Пожалуйста, введите ID клиента' },
+							{ type: 'number', message: 'ID клиента должен быть числом' },
+						]}
+					>
+						<InputNumber style={{ width: '100%' }} />
+					</Form.Item>
+				)}
 
 				<Form.Item
 					name='pharmacyId'
@@ -216,35 +235,41 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 					<Input.TextArea rows={2} />
 				</Form.Item>
 
-				<Form.Item
-					name='assemblerIds'
-					label='Сборщики'
-					rules={[
-						{ required: true, message: 'Пожалуйста, выберите сборщиков' },
-					]}
-				>
-					<Select mode='multiple' placeholder='Выберите сборщиков'>
-						{employees?.map(employee => (
-							<Select.Option key={employee.id} value={employee.id}>
-								{employee.fullName}
-							</Select.Option>
-						))}
-					</Select>
-				</Form.Item>
+				{!isUserMode && (
+					<>
+						<Form.Item
+							name='assemblerIds'
+							label='Сборщики'
+							rules={[
+								{ required: true, message: 'Пожалуйста, выберите сборщиков' },
+							]}
+						>
+							<Select mode='multiple' placeholder='Выберите сборщиков'>
+								{employees?.map(employee => (
+									<Select.Option key={employee.id} value={employee.id}>
+										{employee.fullName}
+									</Select.Option>
+								))}
+							</Select>
+						</Form.Item>
 
-				<Form.Item
-					name='courierIds'
-					label='Курьеры'
-					rules={[{ required: true, message: 'Пожалуйста, выберите курьеров' }]}
-				>
-					<Select mode='multiple' placeholder='Выберите курьеров'>
-						{employees?.map(employee => (
-							<Select.Option key={employee.id} value={employee.id}>
-								{employee.fullName}
-							</Select.Option>
-						))}
-					</Select>
-				</Form.Item>
+						<Form.Item
+							name='courierIds'
+							label='Курьеры'
+							rules={[
+								{ required: true, message: 'Пожалуйста, выберите курьеров' },
+							]}
+						>
+							<Select mode='multiple' placeholder='Выберите курьеров'>
+								{employees?.map(employee => (
+									<Select.Option key={employee.id} value={employee.id}>
+										{employee.fullName}
+									</Select.Option>
+								))}
+							</Select>
+						</Form.Item>
+					</>
+				)}
 
 				{selectedPharmacyId && medications && (
 					<div style={{ marginBottom: 24 }}>
@@ -305,19 +330,17 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, loading }) => {
 											},
 										]}
 									>
-										<Select
-											style={{ width: 300 }}
-											placeholder='Выберите лекарство'
-										>
-											{medications?.map(medication => (
-												<Select.Option
-													key={medication.id}
-													value={medication.id}
-												>
-													{medication.name}
-												</Select.Option>
-											))}
-										</Select>
+										<Text>
+											{medications?.find(
+												med =>
+													med.id ===
+													form.getFieldValue([
+														'medications',
+														name,
+														'medicationId',
+													])
+											)?.name || 'Неизвестное лекарство'}
+										</Text>
 									</Form.Item>
 
 									<Form.Item

@@ -10,8 +10,11 @@ export interface RegisterRequestDto {
 }
 
 export interface AuthResponse {
-	id: number
+	userId: number
 	role: 'ADMIN' | 'USER'
+	username: string
+	discountCardId: number
+	discount: number
 }
 
 export interface User {
@@ -19,4 +22,6 @@ export interface User {
 	role: 'ADMIN' | 'USER'
 	fullName: string
 	username: string
+	discountCardId: number
+	discount: number
 }

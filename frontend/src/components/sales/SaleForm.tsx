@@ -14,6 +14,7 @@ import React, { useEffect, useState } from 'react'
 import { useEmployees } from '../../hooks/useEmployees'
 import { useMedications } from '../../hooks/useMedications'
 import { usePharmacies } from '../../hooks/usePharmacies'
+import { authService } from '../../services/auth'
 import type { MedicationInPharmacy } from '../../types/medication'
 import type { SaleRequest } from '../../types/sale'
 
@@ -22,9 +23,14 @@ const { Text } = Typography
 interface SaleFormProps {
 	onSubmit: (values: SaleRequest) => void
 	loading: boolean
+	isUserMode?: boolean
 }
 
-const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
+const SaleForm: React.FC<SaleFormProps> = ({
+	onSubmit,
+	loading,
+	isUserMode = false,
+}) => {
 	const [form] = Form.useForm()
 	const { data: employees } = useEmployees()
 	const { data: pharmacies } = usePharmacies()
@@ -37,9 +43,9 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
 	const [tableKey, setTableKey] = useState(0)
 	const [currentPage, setCurrentPage] = useState(1)
 	const [isModalVisible, setIsModalVisible] = useState(false)
+	const user = authService.getAuthData()
 
 	useEffect(() => {
-		// Очищаем форму при монтировании компонента
 		form.resetFields()
 		setSelectedPharmacyId(null)
 		setSearchText('')
@@ -53,16 +59,16 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
 
 		const saleRequest: SaleRequest = {
 			pharmacyId: values.pharmacyId,
-			employeeId: values.employeeId,
-			medications: values.medications.map((med: any) => ({
-				medicationId: med.medicationId,
-				quantity: med.quantity,
+			employeeId: isUserMode ? 1 : values.employeeId,
+			medications: values.medications.map(item => ({
+				medicationId: item.medicationId,
+				quantity: item.quantity,
+				price: item.price,
 			})),
-			discountCardId: values.discountCardId,
+			discountCardId: user.discountCardId,
 			prescriptionNumber: values.prescriptionNumber,
 		}
 		onSubmit(saleRequest)
-		// Очищаем форму после успешной отправки
 		form.resetFields()
 		setSelectedPharmacyId(null)
 		setSearchText('')
@@ -85,7 +91,6 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
 	const handleMedicationSelect = (medication: MedicationInPharmacy) => {
 		const currentMedications = form.getFieldValue('medications') || []
 
-		// Проверяем, не добавлено ли уже это лекарство
 		const isAlreadyAdded = currentMedications.some(
 			(med: any) => med.medicationId === medication.id
 		)
@@ -198,21 +203,23 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
 					</Select>
 				</Form.Item>
 
-				<Form.Item
-					name='employeeId'
-					label='Сотрудник'
-					rules={[
-						{ required: true, message: 'Пожалуйста, выберите сотрудника' },
-					]}
-				>
-					<Select>
-						{employees?.map(employee => (
-							<Select.Option key={employee.id} value={employee.id}>
-								{employee.fullName}
-							</Select.Option>
-						))}
-					</Select>
-				</Form.Item>
+				{!isUserMode && (
+					<Form.Item
+						name='employeeId'
+						label='Сотрудник'
+						rules={[
+							{ required: true, message: 'Пожалуйста, выберите сотрудника' },
+						]}
+					>
+						<Select>
+							{employees?.map(employee => (
+								<Select.Option key={employee.id} value={employee.id}>
+									{employee.fullName}
+								</Select.Option>
+							))}
+						</Select>
+					</Form.Item>
+				)}
 
 				{selectedPharmacyId && medications && (
 					<div style={{ marginBottom: 24 }}>
@@ -273,19 +280,17 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
 											},
 										]}
 									>
-										<Select
-											style={{ width: 300 }}
-											placeholder='Выберите лекарство'
-										>
-											{medications?.map(medication => (
-												<Select.Option
-													key={medication.id}
-													value={medication.id}
-												>
-													{medication.name}
-												</Select.Option>
-											))}
-										</Select>
+										<Text>
+											{medications?.find(
+												med =>
+													med.id ===
+													form.getFieldValue([
+														'medications',
+														name,
+														'medicationId',
+													])
+											)?.name || 'Неизвестное лекарство'}
+										</Text>
 									</Form.Item>
 
 									<Form.Item
@@ -308,17 +313,13 @@ const SaleForm: React.FC<SaleFormProps> = ({ onSubmit, loading }) => {
 					)}
 				</Form.List>
 
-				<Form.Item name='discountCardId' label='Номер дисконтной карты'>
-					<InputNumber style={{ width: '100%' }} />
-				</Form.Item>
-
 				<Form.Item name='prescriptionNumber' label='Номер рецепта'>
 					<Input />
 				</Form.Item>
 
 				<Form.Item>
 					<Button type='primary' htmlType='submit' loading={loading}>
-						Создать продажу
+						Создать покупку
 					</Button>
 				</Form.Item>
 			</Form>
